@@ -1,0 +1,37 @@
+services:
+  mysql:
+    image: mysql:8.3
+    container_name: telegram_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: telegram_api
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: telegram
+      MYSQL_PASSWORD: telegram
+    ports:
+      - "3307:3306" # внешний порт
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  telegram_api:
+    build: .
+    container_name: telegram_spring
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "7878:7878"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/telegram_api?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: telegram
+      SPRING_DATASOURCE_PASSWORD: telegram
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+
+volumes:
+  mysql_data:
